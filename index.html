@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Farha Al Madeena - Order Online</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
+        rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -116,8 +119,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .message.bot {
@@ -184,13 +194,31 @@
             animation: bounce 1.4s infinite ease-in-out;
         }
 
-        .typing-dot:nth-child(1) { animation-delay: 0s; }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
 
         @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
-            40% { transform: scale(1); opacity: 1; }
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         /* Quick Actions */
@@ -327,6 +355,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="chat-container">
         <!-- Header -->
@@ -360,16 +389,11 @@
 
         <!-- Input -->
         <div class="chat-input-container">
-            <input
-                type="text"
-                class="chat-input"
-                id="chatInput"
-                placeholder="Type your message..."
-                onkeypress="handleKeyPress(event)"
-            >
+            <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..."
+                onkeypress="handleKeyPress(event)">
             <button class="send-btn" id="sendBtn" onclick="sendMessage()">
                 <svg viewBox="0 0 24 24">
-                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                 </svg>
             </button>
         </div>
@@ -394,165 +418,166 @@
 
         // Initialize chat
         document.addEventListener('DOMContentLoaded', () => {
-            loadChatHistory();
-            if (getChatHistory().length === 0) {
-                addBotMessage("Welcome to Farha Al Madeena! 🍽️\n\nI'm here to help you explore our delicious menu and place orders. We offer authentic Indian, Chinese, and Arabic cuisine with FREE home delivery!\n\nWhat would you like today?");
+                loadChatHistory();
+                if (getChatHistory().length === 0) {
+                    addBotMessage("Welcome to Farha Al Madeena! 🍽️\n\nI'm here to help you explore our delicious menu and place orders. We offer authentic Indian, Chinese, and Arabic cuisine with FREE home delivery!\n\nWhat would you like today?");
+                }
+            });
+
+            // Chat history management
+            function getChatHistory() {
+                return JSON.parse(sessionStorage.getItem('chatHistory') || '[]');
             }
-        });
 
-        // Chat history management
-        function getChatHistory() {
-            return JSON.parse(sessionStorage.getItem('chatHistory') || '[]');
-        }
+            function saveChatHistory(history) {
+                sessionStorage.setItem('chatHistory', JSON.stringify(history));
+            }
 
-        function saveChatHistory(history) {
-            sessionStorage.setItem('chatHistory', JSON.stringify(history));
-        }
+            function loadChatHistory() {
+                const history = getChatHistory();
+                history.forEach(msg => {
+                    displayMessage(msg.content, msg.type, msg.time, false);
+                });
+                scrollToBottom();
+            }
 
-        function loadChatHistory() {
-            const history = getChatHistory();
-            history.forEach(msg => {
-                displayMessage(msg.content, msg.type, msg.time, false);
-            });
-            scrollToBottom();
-        }
+            // Display message
+            function displayMessage(content, type, time = null, save = true) {
+                const messagesContainer = document.getElementById('chatMessages');
+                const typingIndicator = document.getElementById('typingIndicator');
 
-        // Display message
-        function displayMessage(content, type, time = null, save = true) {
-            const messagesContainer = document.getElementById('chatMessages');
-            const typingIndicator = document.getElementById('typingIndicator');
+                const messageTime = time || new Date().toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
 
-            const messageTime = time || new Date().toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
-
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}`;
-            messageDiv.innerHTML = `
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+                messageDiv.innerHTML = `
                 <div class="message-bubble">${formatMessage(content)}</div>
                 <div class="message-time">${messageTime}</div>
             `;
 
-            messagesContainer.insertBefore(messageDiv, typingIndicator);
-            scrollToBottom();
+                messagesContainer.insertBefore(messageDiv, typingIndicator);
+                scrollToBottom();
 
-            if (save) {
-                const history = getChatHistory();
-                history.push({ content, type, time: messageTime });
-                saveChatHistory(history);
-            }
-        }
-
-        function formatMessage(text) {
-            // Convert newlines to <br> and basic formatting
-            return text
-                .replace(/\n/g, '<br>')
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>');
-        }
-
-        function addBotMessage(content) {
-            displayMessage(content, 'bot');
-        }
-
-        function addUserMessage(content) {
-            displayMessage(content, 'user');
-        }
-
-        // Send message
-        async function sendMessage() {
-            const input = document.getElementById('chatInput');
-            const sendBtn = document.getElementById('sendBtn');
-            const message = input.value.trim();
-
-            if (!message) return;
-
-            // Disable input
-            input.disabled = true;
-            sendBtn.disabled = true;
-
-            // Add user message
-            addUserMessage(message);
-            input.value = '';
-
-            // Show typing indicator
-            showTyping(true);
-
-            try {
-                const response = await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        chatInput: message,
-                        sessionId: SESSION_ID
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                if (save) {
+                    const history = getChatHistory();
+                    history.push({ content, type, time: messageTime });
+                    saveChatHistory(history);
                 }
-
-                const data = await response.json();
-
-                // Handle response - n8n may return different formats
-                let botResponse = '';
-                if (typeof data === 'string') {
-                    botResponse = data;
-                } else if (data.output) {
-                    botResponse = data.output;
-                } else if (data.text) {
-                    botResponse = data.text;
-                } else if (data.response) {
-                    botResponse = data.response;
-                } else if (data.message) {
-                    botResponse = data.message;
-                } else {
-                    botResponse = JSON.stringify(data);
-                }
-
-                // Clean up order confirmation tags from display
-                botResponse = botResponse.replace(/\[ORDER_CONFIRMED\].*?\[\/ORDER_CONFIRMED\]/gs, '').trim();
-
-                showTyping(false);
-                addBotMessage(botResponse);
-
-            } catch (error) {
-                console.error('Error:', error);
-                showTyping(false);
-                addBotMessage("I'm sorry, I'm having trouble connecting right now. Please try again or call us at 04 881 19 94 for immediate assistance.");
             }
 
-            // Re-enable input
-            input.disabled = false;
-            sendBtn.disabled = false;
-            input.focus();
-        }
+            function formatMessage(text) {
+                // Convert newlines to <br> and basic formatting
+                return text
+                    .replace(/\n/g, '<br>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+            }
 
-        function sendQuickMessage(message) {
-            document.getElementById('chatInput').value = message;
-            sendMessage();
-        }
+            function addBotMessage(content) {
+                displayMessage(content, 'bot');
+            }
 
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
+            function addUserMessage(content) {
+                displayMessage(content, 'user');
+            }
+
+            // Send message
+            async function sendMessage() {
+                const input = document.getElementById('chatInput');
+                const sendBtn = document.getElementById('sendBtn');
+                const message = input.value.trim();
+
+                if (!message) return;
+
+                // Disable input
+                input.disabled = true;
+                sendBtn.disabled = true;
+
+                // Add user message
+                addUserMessage(message);
+                input.value = '';
+
+                // Show typing indicator
+                showTyping(true);
+
+                try {
+                    const response = await fetch(WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            chatInput: message,
+                            sessionId: SESSION_ID
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+
+                    const data = await response.json();
+
+                    // Handle response - n8n may return different formats
+                    let botResponse = '';
+                    if (typeof data === 'string') {
+                        botResponse = data;
+                    } else if (data.output) {
+                        botResponse = data.output;
+                    } else if (data.text) {
+                        botResponse = data.text;
+                    } else if (data.response) {
+                        botResponse = data.response;
+                    } else if (data.message) {
+                        botResponse = data.message;
+                    } else {
+                        botResponse = JSON.stringify(data);
+                    }
+
+                    // Clean up order confirmation tags from display
+                    botResponse = botResponse.replace(/\[ORDER_CONFIRMED\].*?\[\/ORDER_CONFIRMED\]/gs, '').trim();
+
+                    showTyping(false);
+                    addBotMessage(botResponse);
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    showTyping(false);
+                    addBotMessage("I'm sorry, I'm having trouble connecting right now. Please try again or call us at 04 881 19 94 for immediate assistance.");
+                }
+
+                // Re-enable input
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+            }
+
+            function sendQuickMessage(message) {
+                document.getElementById('chatInput').value = message;
                 sendMessage();
             }
-        }
 
-        function showTyping(show) {
-            const indicator = document.getElementById('typingIndicator');
-            indicator.classList.toggle('show', show);
-            scrollToBottom();
-        }
+            function handleKeyPress(event) {
+                if (event.key === 'Enter') {
+                    sendMessage();
+                }
+            }
 
-        function scrollToBottom() {
-            const container = document.getElementById('chatMessages');
-            container.scrollTop = container.scrollHeight;
-        }
-    </script>
+            function showTyping(show) {
+                const indicator = document.getElementById('typingIndicator');
+                indicator.classList.toggle('show', show);
+                scrollToBottom();
+            }
+
+            function scrollToBottom() {
+                const container = document.getElementById('chatMessages');
+                container.scrollTop = container.scrollHeight;
+            }
+        </script>
 </body>
+
 </html>
