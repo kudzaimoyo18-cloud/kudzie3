@@ -435,6 +435,9 @@
             <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">
                 🔔 Sound On
             </button>
+            <button class="sound-toggle" onclick="clearAllOrders()">
+                🗑️ Clear All
+            </button>
             <div class="order-count" id="orderCount">0 Active Orders</div>
             <div class="time-display" id="timeDisplay">00:00</div>
         </div>
@@ -571,7 +574,28 @@
         function loadOrders() {
             const stored = localStorage.getItem(STORAGE_KEY);
             if (stored) {
-                orders = JSON.parse(stored);
+                try {
+                    const parsed = JSON.parse(stored);
+                    // Filter out invalid orders (missing orderId)
+                    orders = parsed.filter(o => o && o.orderId);
+                    // Save cleaned orders back
+                    if (orders.length !== parsed.length) {
+                        saveOrders();
+                        console.log('Cleaned invalid orders from storage');
+                    }
+                } catch (e) {
+                    console.error('Error loading orders:', e);
+                    orders = [];
+                }
+            }
+        }
+
+        // Clear all orders
+        function clearAllOrders() {
+            if (confirm('Are you sure you want to clear ALL orders?')) {
+                orders = [];
+                saveOrders();
+                renderAllOrders();
             }
         }
 
@@ -663,20 +687,35 @@
 
         // Render order card
         function renderOrderCard(order) {
-            const orderType = (order.orderType || order.order_type || 'pickup').toLowerCase().replace('-', '').replace(' ', '');
-            const typeClass = orderType === 'delivery' ? 'delivery' : orderType === 'dinein' || orderType === 'dine-in' ? 'dinein' : 'pickup';
-            const typeLabel = orderType === 'delivery' ? 'Delivery' : orderType === 'dinein' || orderType === 'dine-in' ? 'Dine-in' : 'Pickup';
+            // Skip invalid orders
+            if (!order || !order.orderId) {
+                console.warn('Invalid order:', order);
+                return '';
+            }
+
+            const orderType = (order.orderType || order.order_type || 'pickup').toLowerCase().replace(/-/g, '').replace(/ /g, '');
+            const typeClass = orderType === 'delivery' ? 'delivery' : (orderType === 'dinein' || orderType === 'dine-in') ? 'dinein' : 'pickup';
+            const typeLabel = orderType === 'delivery' ? 'Delivery' : (orderType === 'dinein' || orderType === 'dine-in') ? 'Dine-in' : 'Pickup';
 
             const items = order.items || order.orderData?.items || [];
-            const customerName = order.customer_name || order.customerName || order.orderData?.customer_name || 'Unknown';
+            const customerName = order.customer_name || order.customerName || order.orderData?.customer_name || 'Customer';
             const phone = order.phone || order.orderData?.phone || '';
             const address = order.address || order.orderData?.address || '';
             const total = order.total || order.orderData?.total || 0;
-            const time = new Date(order.receivedAt || order.timestamp).toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
+
+            let time = 'Unknown';
+            try {
+                const timestamp = order.receivedAt || order.timestamp;
+                if (timestamp) {
+                    time = new Date(timestamp).toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                }
+            } catch (e) {
+                time = 'Unknown';
+            }
 
             let actionsHtml = '';
             if (order.status === 'new') {
@@ -775,6 +814,7 @@
         // Expose to window for debugging
         window.addDemoOrders = addDemoOrders;
         window.clearCompleted = clearCompleted;
+        window.clearAllOrders = clearAllOrders;
 
         // Listen for messages from other windows (cross-tab communication)
         window.addEventListener('storage', (e) => {
