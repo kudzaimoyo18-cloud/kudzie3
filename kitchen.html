@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farha Al Madeena - Kitchen Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --delivery: #3B82F6;
+            --delivery-light: #DBEAFE;
+            --delivery-dark: #1D4ED8;
+
+            --dinein: #10B981;
+            --dinein-light: #D1FAE5;
+            --dinein-dark: #047857;
+
+            --pickup: #F59E0B;
+            --pickup-light: #FEF3C7;
+            --pickup-dark: #D97706;
+
+            --preparing: #8B5CF6;
+            --preparing-light: #EDE9FE;
+
+            --ready: #EC4899;
+            --ready-light: #FCE7F3;
+
+            --completed: #6B7280;
+            --completed-light: #F3F4F6;
+
+            --bg: #F1F5F9;
+            --card: #FFFFFF;
+            --text: #1E293B;
+            --text-light: #64748B;
+            --border: #E2E8F0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            color: var(--text);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #8B2635 0%, #6B1D2A 100%);
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #10B981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .time-display {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .order-count {
+            background: #D4A574;
+            color: #1E293B;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 24px;
+            padding: 16px 24px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        .legend-color.delivery { background: var(--delivery); }
+        .legend-color.dinein { background: var(--dinein); }
+        .legend-color.pickup { background: var(--pickup); }
+
+        /* Main Content */
+        .main {
+            padding: 24px;
+        }
+
+        /* Order Columns */
+        .columns {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .column {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .column-header {
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .column-header .count {
+            background: var(--bg);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+
+        .column.new .column-header { background: #FEF3C7; color: #92400E; }
+        .column.preparing .column-header { background: var(--preparing-light); color: #5B21B6; }
+        .column.ready .column-header { background: var(--ready-light); color: #9D174D; }
+        .column.completed .column-header { background: var(--completed-light); color: #374151; }
+
+        .column-body {
+            padding: 16px;
+            min-height: 400px;
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Order Card */
+        .order-card {
+            border-radius: 12px;
+            padding: 16px;
+            position: relative;
+            animation: slideIn 0.3s ease;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .order-card.delivery {
+            background: var(--delivery-light);
+            border-left: 4px solid var(--delivery);
+        }
+
+        .order-card.dinein {
+            background: var(--dinein-light);
+            border-left: 4px solid var(--dinein);
+        }
+
+        .order-card.pickup {
+            background: var(--pickup-light);
+            border-left: 4px solid var(--pickup);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .order-id {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .order-type-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .order-card.delivery .order-type-badge {
+            background: var(--delivery);
+            color: white;
+        }
+
+        .order-card.dinein .order-type-badge {
+            background: var(--dinein);
+            color: white;
+        }
+
+        .order-card.pickup .order-type-badge {
+            background: var(--pickup);
+            color: white;
+        }
+
+        .order-time {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-bottom: 12px;
+        }
+
+        .order-items {
+            margin-bottom: 12px;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            padding: 4px 0;
+            border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-qty {
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .order-total {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 16px;
+            padding-top: 12px;
+            border-top: 2px solid rgba(0, 0, 0, 0.1);
+            margin-bottom: 12px;
+        }
+
+        .customer-info {
+            font-size: 13px;
+            color: var(--text-light);
+            margin-bottom: 12px;
+        }
+
+        .customer-info div {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .action-btn.primary {
+            background: var(--preparing);
+            color: white;
+        }
+
+        .action-btn.success {
+            background: var(--dinein);
+            color: white;
+        }
+
+        .action-btn.complete {
+            background: var(--completed);
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        /* Sound Toggle */
+        .sound-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sound-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            background: var(--delivery);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .legend {
+                justify-content: center;
+            }
+
+            .columns {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">🍽️ Kitchen Dashboard</div>
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                <span>Live</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">
+                🔔 Sound On
+            </button>
+            <div class="order-count" id="orderCount">0 Active Orders</div>
+            <div class="time-display" id="timeDisplay">00:00</div>
+        </div>
+    </header>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color delivery"></div>
+            <span>Delivery</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color dinein"></div>
+            <span>Dine-in</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color pickup"></div>
+            <span>Pickup / Takeaway</span>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        🔔 New order received!
+    </div>
+
+    <main class="main">
+        <div class="columns">
+            <div class="column new">
+                <div class="column-header">
+                    <span>📥 New Orders</span>
+                    <span class="count" id="newCount">0</span>
+                </div>
+                <div class="column-body" id="newOrders">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div>No new orders</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="column preparing">
+                <div class="column-header">
+                    <span>🍳 Preparing</span>
+                    <span class="count" id="preparingCount">0</span>
+                </div>
+                <div class="column-body" id="preparingOrders">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👨‍🍳</div>
+                        <div>No orders being prepared</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="column ready">
+                <div class="column-header">
+                    <span>✅ Ready</span>
+                    <span class="count" id="readyCount">0</span>
+                </div>
+                <div class="column-body" id="readyOrders">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🍽️</div>
+                        <div>No orders ready</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="column completed">
+                <div class="column-header">
+                    <span>📦 Completed</span>
+                    <span class="count" id="completedCount">0</span>
+                </div>
+                <div class="column-body" id="completedOrders">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">✨</div>
+                        <div>No completed orders</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Configuration
+        const WEBHOOK_URL = 'https://kudzi.app.n8n.cloud/webhook/faahmadeen-orders';
+        const STORAGE_KEY = 'kitchen_orders';
+
+        let orders = [];
+        let soundEnabled = true;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadOrders();
+            updateTime();
+            setInterval(updateTime, 1000);
+            setInterval(pollForOrders, 5000); // Poll every 5 seconds
+            renderAllOrders();
+        });
+
+        // Time display
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        // Sound toggle
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundToggle').innerHTML = soundEnabled
+                ? '🔔 Sound On'
+                : '🔕 Sound Off';
+        }
+
+        // Play notification sound
+        function playNotification() {
+            if (!soundEnabled) return;
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleym0qdDmjGc1Fo6j0eeEXjFIn7nPzINiPUOQqMfMiWpASIakw8yMbkVLgaHAzY9xR0t+nsLQk3RKTHqcwdWYd0xMd5rB2Jx7TUxzmcLcoH9OTG+Xwt+kgk9NbJXC4qiFUE1plMTmrIhRTWaSwuqvilJNZJDD7bKMU01hj8Pwto5UTl6Ow/O6kFVOW43E9r2SV09YjMT5wJRYT1aLxfy/lllPU4rF/r+WWk9RicX/v5dbUE+IxQDAl1xQTYfFAMGYXVBLhsYBwpheUEmFxgLDmV9QR4THAsOaYFBFg8cDxJpgUEOCxwTFm2FQQYHHBcabYlA/gMcGxpxjTz1/xwfHnWNPO33HCMidZE85fMgJyZ5kTjZ7yArKn2VONHrIC8ugZk4ye8gMy6FmTjB6yA3MomZOMHrIDsyiZk4ve8gPzaJnTy97xxDNomhPL3vHEc6jaE8ue8cSzqNoTy57xxPPo2hPLnvHE8+jaE8ue8cU0KRpTy57xxTQpGlPLnvHFdCkaU8te8cW0KVqTy17xxbQpWpPLXvHF9Clak8se8cY0aVqTyx7xxnRpmpPK3vHGtGmak8re8cb0qdqTyp8xxzSp2pPKnzHHdKnak8qfMce0qdqTyl8xx/Tp2pPKXzHINOnbE8ofccg06dsTyp8xyHTqGxPKHzHItOobE8nfMcj1KhsTyd8xyTUqGxPJn3HJdSobE8lfccm1altTyR9xyfVqW1PI33HKNWpbU8jfccp1aptTyJ9xyrWqm1PIn3HK9aqbU8hfccs1qptTyB9xy3Xq25PIH3HLtertk8ffsgv16tuTx5+yC/Xq25PHn7IL9erbtAdfsgw2KxuTxx+yDDYrG5PHH7IMdisbk8bfsgx2KxuTxt+yDLZrW9PGn7IMtmtb08Zf8gz2a1vTxl/yDTarW9PGH/INNqtb08Yf8g12q1vTxeAyDXarW9PF4DINtutcE8WgMg2261wTxWAyDfbrXBPFYDIN9utcE8UgMg4261wTxSAyDjcrnBPFIDIONyucE8TgMg53K5wTxOAyDncrnBPE4DIOdyucE8SgMg63a9xTxKAyDrdrnFPEoHIOt2vcU8Rgcg73a9xTxGByDvdr3FPEYHIPNyvcU8Qgcg83K9xTxCByDzcr3FPEIHI');
+            audio.volume = 0.5;
+            audio.play().catch(() => {});
+        }
+
+        // Show notification
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            playNotification();
+            setTimeout(() => notification.classList.remove('show'), 3000);
+        }
+
+        // Load orders from localStorage
+        function loadOrders() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                orders = JSON.parse(stored);
+            }
+        }
+
+        // Save orders to localStorage
+        function saveOrders() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+        }
+
+        // Add new order
+        function addOrder(orderData) {
+            const existingOrder = orders.find(o => o.orderId === orderData.orderId);
+            if (existingOrder) return; // Skip duplicates
+
+            const order = {
+                ...orderData,
+                status: 'new',
+                receivedAt: new Date().toISOString()
+            };
+            orders.unshift(order);
+            saveOrders();
+            renderAllOrders();
+            showNotification(`🔔 New ${order.orderType} order #${order.orderId}!`);
+        }
+
+        // Update order status
+        function updateOrderStatus(orderId, newStatus) {
+            const order = orders.find(o => o.orderId === orderId);
+            if (order) {
+                order.status = newStatus;
+                order.updatedAt = new Date().toISOString();
+                saveOrders();
+                renderAllOrders();
+            }
+        }
+
+        // Poll for new orders (in production, use WebSocket)
+        async function pollForOrders() {
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'get_orders' })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.orders && Array.isArray(data.orders)) {
+                        data.orders.forEach(order => addOrder(order));
+                    }
+                }
+            } catch (error) {
+                console.log('Polling check:', error.message);
+            }
+        }
+
+        // Render all orders
+        function renderAllOrders() {
+            const statuses = ['new', 'preparing', 'ready', 'completed'];
+
+            statuses.forEach(status => {
+                const container = document.getElementById(`${status}Orders`);
+                const statusOrders = orders.filter(o => o.status === status);
+
+                if (statusOrders.length === 0) {
+                    container.innerHTML = getEmptyState(status);
+                } else {
+                    container.innerHTML = statusOrders.map(order => renderOrderCard(order)).join('');
+                }
+
+                document.getElementById(`${status}Count`).textContent = statusOrders.length;
+            });
+
+            // Update total count
+            const activeCount = orders.filter(o => o.status !== 'completed').length;
+            document.getElementById('orderCount').textContent = `${activeCount} Active Order${activeCount !== 1 ? 's' : ''}`;
+        }
+
+        // Get empty state HTML
+        function getEmptyState(status) {
+            const states = {
+                new: { icon: '📭', text: 'No new orders' },
+                preparing: { icon: '👨‍🍳', text: 'No orders being prepared' },
+                ready: { icon: '🍽️', text: 'No orders ready' },
+                completed: { icon: '✨', text: 'No completed orders' }
+            };
+            const state = states[status];
+            return `<div class="empty-state"><div class="empty-state-icon">${state.icon}</div><div>${state.text}</div></div>`;
+        }
+
+        // Render order card
+        function renderOrderCard(order) {
+            const orderType = (order.orderType || order.order_type || 'pickup').toLowerCase().replace('-', '').replace(' ', '');
+            const typeClass = orderType === 'delivery' ? 'delivery' : orderType === 'dinein' || orderType === 'dine-in' ? 'dinein' : 'pickup';
+            const typeLabel = orderType === 'delivery' ? 'Delivery' : orderType === 'dinein' || orderType === 'dine-in' ? 'Dine-in' : 'Pickup';
+
+            const items = order.items || order.orderData?.items || [];
+            const customerName = order.customer_name || order.customerName || order.orderData?.customer_name || 'Unknown';
+            const phone = order.phone || order.orderData?.phone || '';
+            const address = order.address || order.orderData?.address || '';
+            const total = order.total || order.orderData?.total || 0;
+            const time = new Date(order.receivedAt || order.timestamp).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            let actionsHtml = '';
+            if (order.status === 'new') {
+                actionsHtml = `<button class="action-btn primary" onclick="updateOrderStatus('${order.orderId}', 'preparing')">🍳 Start Preparing</button>`;
+            } else if (order.status === 'preparing') {
+                actionsHtml = `<button class="action-btn success" onclick="updateOrderStatus('${order.orderId}', 'ready')">✅ Mark Ready</button>`;
+            } else if (order.status === 'ready') {
+                actionsHtml = `<button class="action-btn complete" onclick="updateOrderStatus('${order.orderId}', 'completed')">📦 Complete</button>`;
+            }
+
+            return `
+                <div class="order-card ${typeClass}">
+                    <div class="order-header">
+                        <div class="order-id">#${order.orderId}</div>
+                        <span class="order-type-badge">${typeLabel}</span>
+                    </div>
+                    <div class="order-time">⏰ ${time}</div>
+                    <div class="order-items">
+                        ${items.map(item => `
+                            <div class="order-item">
+                                <span><span class="item-qty">${item.quantity}x</span> ${item.name}</span>
+                                <span>${item.price} AED</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="order-total">
+                        <span>Total</span>
+                        <span>${total} AED</span>
+                    </div>
+                    <div class="customer-info">
+                        <div>👤 ${customerName}</div>
+                        ${phone ? `<div>📱 ${phone}</div>` : ''}
+                        ${typeClass === 'delivery' && address && address !== 'N/A' ? `<div>📍 ${address}</div>` : ''}
+                    </div>
+                    <div class="order-actions">
+                        ${actionsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Demo: Add sample orders for testing
+        function addDemoOrders() {
+            const demoOrders = [
+                {
+                    orderId: 'ORD-' + Date.now(),
+                    orderType: 'Delivery',
+                    items: [
+                        { name: 'Chicken Biryani', quantity: 2, price: 13 },
+                        { name: 'Mango Lassi', quantity: 2, price: 8 }
+                    ],
+                    customer_name: 'Ahmed Hassan',
+                    phone: '+971 50 123 4567',
+                    address: 'Building 5, DIP-1, Dubai',
+                    total: 42,
+                    timestamp: new Date().toISOString()
+                },
+                {
+                    orderId: 'ORD-' + (Date.now() + 1),
+                    orderType: 'Dine-in',
+                    items: [
+                        { name: 'Masala Dosa', quantity: 1, price: 6 },
+                        { name: 'Idly Set', quantity: 2, price: 5 }
+                    ],
+                    customer_name: 'Sara Khan',
+                    phone: '+971 55 987 6543',
+                    total: 16,
+                    timestamp: new Date().toISOString()
+                },
+                {
+                    orderId: 'ORD-' + (Date.now() + 2),
+                    orderType: 'Pickup',
+                    items: [
+                        { name: 'Shawarma Plate', quantity: 3, price: 15 },
+                        { name: 'Fresh Juice', quantity: 3, price: 8 }
+                    ],
+                    customer_name: 'Mohammed Ali',
+                    phone: '+971 52 456 7890',
+                    total: 69,
+                    timestamp: new Date().toISOString()
+                }
+            ];
+
+            demoOrders.forEach((order, i) => {
+                setTimeout(() => addOrder(order), i * 1000);
+            });
+        }
+
+        // Clear completed orders
+        function clearCompleted() {
+            orders = orders.filter(o => o.status !== 'completed');
+            saveOrders();
+            renderAllOrders();
+        }
+
+        // Expose to window for debugging
+        window.addDemoOrders = addDemoOrders;
+        window.clearCompleted = clearCompleted;
+
+        // Listen for messages from other windows (cross-tab communication)
+        window.addEventListener('storage', (e) => {
+            if (e.key === STORAGE_KEY) {
+                loadOrders();
+                renderAllOrders();
+            }
+        });
+
+        // Receive orders via BroadcastChannel (same-origin)
+        const channel = new BroadcastChannel('kitchen_orders');
+        channel.onmessage = (e) => {
+            if (e.data.type === 'new_order') {
+                addOrder(e.data.order);
+            }
+        };
+    </script>
+</body>
+
+</html>
