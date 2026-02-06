@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farha Al Madeena - Order Online</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --gold: #D4A574;
+            --gold-light: #E8C89E;
+            --deep-red: #8B2635;
+            --deep-red-dark: #6B1D2A;
+            --cream: #FFF8F0;
+            --cream-dark: #F5EDE3;
+            --text-dark: #2D2D2D;
+            --text-light: #666666;
+            --white: #FFFFFF;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--cream) 0%, var(--cream-dark) 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 450px;
+            height: 90vh;
+            max-height: 750px;
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .chat-header {
+            background: linear-gradient(135deg, var(--deep-red) 0%, var(--deep-red-dark) 100%);
+            color: var(--white);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .restaurant-logo {
+            width: 70px;
+            height: 70px;
+            background: var(--white);
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .restaurant-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .restaurant-tagline {
+            font-size: 13px;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--gold);
+            color: var(--text-dark);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        /* Chat Messages */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: var(--cream);
+        }
+
+        .message {
+            max-width: 85%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.bot {
+            align-self: flex-start;
+        }
+
+        .message.user {
+            align-self: flex-end;
+        }
+
+        .message-bubble {
+            padding: 14px 18px;
+            border-radius: 20px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .message.bot .message-bubble {
+            background: var(--white);
+            color: var(--text-dark);
+            border-bottom-left-radius: 6px;
+            box-shadow: var(--shadow);
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, var(--deep-red) 0%, var(--deep-red-dark) 100%);
+            color: var(--white);
+            border-bottom-right-radius: 6px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: var(--text-light);
+            margin-top: 6px;
+            padding: 0 4px;
+        }
+
+        .message.user .message-time {
+            text-align: right;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            padding: 14px 18px;
+            background: var(--white);
+            border-radius: 20px;
+            border-bottom-left-radius: 6px;
+            box-shadow: var(--shadow);
+        }
+
+        .typing-indicator.show {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--gold);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--white);
+            border-top: 1px solid var(--cream-dark);
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .quick-actions::-webkit-scrollbar {
+            display: none;
+        }
+
+        .quick-btn {
+            flex-shrink: 0;
+            padding: 10px 16px;
+            background: var(--cream);
+            border: 2px solid var(--gold);
+            border-radius: 25px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .quick-btn:hover {
+            background: var(--gold);
+            color: var(--white);
+            transform: translateY(-2px);
+        }
+
+        /* Chat Input */
+        .chat-input-container {
+            display: flex;
+            gap: 12px;
+            padding: 16px 20px;
+            background: var(--white);
+            border-top: 1px solid var(--cream-dark);
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 14px 20px;
+            border: 2px solid var(--cream-dark);
+            border-radius: 25px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .chat-input:focus {
+            border-color: var(--gold);
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-light);
+        }
+
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--deep-red) 0%, var(--deep-red-dark) 100%);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(139, 38, 53, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .send-btn svg {
+            width: 22px;
+            height: 22px;
+            fill: var(--white);
+        }
+
+        /* Footer Info */
+        .chat-footer {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 12px 20px;
+            background: var(--cream);
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .footer-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .footer-item a {
+            color: var(--deep-red);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            body {
+                padding: 0;
+            }
+
+            .chat-container {
+                height: 100vh;
+                max-height: none;
+                border-radius: 0;
+            }
+
+            .restaurant-name {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="restaurant-logo">🍽️</div>
+            <h1 class="restaurant-name">Farha Al Madeena</h1>
+            <p class="restaurant-tagline">Bakery & Restaurant • Dubai Investment Park</p>
+            <div class="header-badge">
+                <span>🚗</span>
+                <span>FREE Home Delivery</span>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be inserted here -->
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="quick-btn" onclick="sendQuickMessage('Show me the menu')">📋 View Menu</button>
+            <button class="quick-btn" onclick="sendQuickMessage('I want to place an order')">🛒 Order Now</button>
+            <button class="quick-btn" onclick="sendQuickMessage('What are your popular items?')">⭐ Popular</button>
+            <button class="quick-btn" onclick="sendQuickMessage('What are your delivery hours?')">🕐 Hours</button>
+        </div>
+
+        <!-- Input -->
+        <div class="chat-input-container">
+            <input
+                type="text"
+                class="chat-input"
+                id="chatInput"
+                placeholder="Type your message..."
+                onkeypress="handleKeyPress(event)"
+            >
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                <svg viewBox="0 0 24 24">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <div class="chat-footer">
+            <div class="footer-item">
+                <span>📞</span>
+                <a href="tel:048811994">04 881 19 94</a>
+            </div>
+            <div class="footer-item">
+                <span>💬</span>
+                <a href="https://wa.me/971556377367">WhatsApp</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const WEBHOOK_URL = 'https://kudzi.app.n8n.cloud/webhook-test/faahmadeen';
+        const SESSION_ID = 'session_' + Math.random().toString(36).substring(2, 15);
+
+        // Initialize chat
+        document.addEventListener('DOMContentLoaded', () => {
+            loadChatHistory();
+            if (getChatHistory().length === 0) {
+                addBotMessage("Welcome to Farha Al Madeena! 🍽️\n\nI'm here to help you explore our delicious menu and place orders. We offer authentic Indian, Chinese, and Arabic cuisine with FREE home delivery!\n\nWhat would you like today?");
+            }
+        });
+
+        // Chat history management
+        function getChatHistory() {
+            return JSON.parse(sessionStorage.getItem('chatHistory') || '[]');
+        }
+
+        function saveChatHistory(history) {
+            sessionStorage.setItem('chatHistory', JSON.stringify(history));
+        }
+
+        function loadChatHistory() {
+            const history = getChatHistory();
+            history.forEach(msg => {
+                displayMessage(msg.content, msg.type, msg.time, false);
+            });
+            scrollToBottom();
+        }
+
+        // Display message
+        function displayMessage(content, type, time = null, save = true) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const typingIndicator = document.getElementById('typingIndicator');
+
+            const messageTime = time || new Date().toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = `
+                <div class="message-bubble">${formatMessage(content)}</div>
+                <div class="message-time">${messageTime}</div>
+            `;
+
+            messagesContainer.insertBefore(messageDiv, typingIndicator);
+            scrollToBottom();
+
+            if (save) {
+                const history = getChatHistory();
+                history.push({ content, type, time: messageTime });
+                saveChatHistory(history);
+            }
+        }
+
+        function formatMessage(text) {
+            // Convert newlines to <br> and basic formatting
+            return text
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>');
+        }
+
+        function addBotMessage(content) {
+            displayMessage(content, 'bot');
+        }
+
+        function addUserMessage(content) {
+            displayMessage(content, 'user');
+        }
+
+        // Send message
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Disable input
+            input.disabled = true;
+            sendBtn.disabled = true;
+
+            // Add user message
+            addUserMessage(message);
+            input.value = '';
+
+            // Show typing indicator
+            showTyping(true);
+
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chatInput: message,
+                        sessionId: SESSION_ID
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+
+                // Handle response - n8n may return different formats
+                let botResponse = '';
+                if (typeof data === 'string') {
+                    botResponse = data;
+                } else if (data.output) {
+                    botResponse = data.output;
+                } else if (data.text) {
+                    botResponse = data.text;
+                } else if (data.response) {
+                    botResponse = data.response;
+                } else if (data.message) {
+                    botResponse = data.message;
+                } else {
+                    botResponse = JSON.stringify(data);
+                }
+
+                // Clean up order confirmation tags from display
+                botResponse = botResponse.replace(/\[ORDER_CONFIRMED\].*?\[\/ORDER_CONFIRMED\]/gs, '').trim();
+
+                showTyping(false);
+                addBotMessage(botResponse);
+
+            } catch (error) {
+                console.error('Error:', error);
+                showTyping(false);
+                addBotMessage("I'm sorry, I'm having trouble connecting right now. Please try again or call us at 04 881 19 94 for immediate assistance.");
+            }
+
+            // Re-enable input
+            input.disabled = false;
+            sendBtn.disabled = false;
+            input.focus();
+        }
+
+        function sendQuickMessage(message) {
+            document.getElementById('chatInput').value = message;
+            sendMessage();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function showTyping(show) {
+            const indicator = document.getElementById('typingIndicator');
+            indicator.classList.toggle('show', show);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('chatMessages');
+            container.scrollTop = container.scrollHeight;
+        }
+    </script>
+</body>
+</html>
