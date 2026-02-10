@@ -354,6 +354,17 @@
             color: white;
         }
 
+        .action-btn.pick {
+            background: #F59E0B;
+            color: white;
+        }
+
+        .action-btn.pick:disabled {
+            background: #D4A574;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         /* Empty State */
         .empty-state {
             text-align: center;
@@ -520,19 +531,21 @@
 
     <script>
         // Configuration
-        const WEBHOOK_URL = 'https://kudzi.app.n8n.cloud/webhook/faahmadeen-orders';
+        const SUPABASE_URL = 'https://ssttxhadegoyiianjitrw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzdHR4aGFkZWdveWlpYW5qaXR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMDI1NDYsImV4cCI6MjA4NTc3ODU0Nn0.AkJKe2PhGjRLFOmW7elbCQFjexqaJxfzHP7N5K596WE';
         const STORAGE_KEY = 'kitchen_orders';
+        const N8N_ORDERS_WEBHOOK = 'https://kudzi.app.n8n.cloud/webhook/faahmadeen-orders';
 
         let orders = [];
         let soundEnabled = true;
+        let lastFetchTime = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             loadOrders();
+            renderAllOrders();
             updateTime();
             setInterval(updateTime, 1000);
-            setInterval(pollForOrders, 5000); // Poll every 5 seconds
-            renderAllOrders();
         });
 
         // Time display
@@ -631,6 +644,52 @@
             }
         }
 
+        // Pick order: send webhook to n8n and move to preparing
+        async function pickOrder(orderId) {
+            const order = orders.find(o => o.orderId === orderId);
+            if (!order) return;
+
+            const btn = document.getElementById(`pick-${orderId}`);
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '⏳ Picking...';
+            }
+
+            try {
+                const response = await fetch(N8N_ORDERS_WEBHOOK, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'order_picked',
+                        orderId: order.orderId,
+                        pickedAt: new Date().toISOString(),
+                        orderData: {
+                            items: order.items || order.orderData?.items || [],
+                            customer_name: order.customer_name || order.customerName || order.orderData?.customer_name || '',
+                            phone: order.phone || order.orderData?.phone || '',
+                            order_type: order.orderType || order.order_type || order.orderData?.order_type || '',
+                            address: order.address || order.orderData?.address || 'N/A',
+                            total: order.total || order.orderData?.total || 0
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    updateOrderStatus(orderId, 'preparing');
+                    showNotification(`✅ Order #${orderId} picked!`);
+                } else {
+                    throw new Error(`Server responded ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Failed to pick order:', error);
+                showNotification(`❌ Failed to pick order #${orderId}. Try again.`);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '🤚 Pick Order';
+                }
+            }
+        }
+
         // Poll for new orders (in production, use WebSocket)
         async function pollForOrders() {
             try {
@@ -719,7 +778,7 @@
 
             let actionsHtml = '';
             if (order.status === 'new') {
-                actionsHtml = `<button class="action-btn primary" onclick="updateOrderStatus('${order.orderId}', 'preparing')">🍳 Start Preparing</button>`;
+                actionsHtml = `<button class="action-btn pick" id="pick-${order.orderId}" onclick="pickOrder('${order.orderId}')">🤚 Pick Order</button>`;
             } else if (order.status === 'preparing') {
                 actionsHtml = `<button class="action-btn success" onclick="updateOrderStatus('${order.orderId}', 'ready')">✅ Mark Ready</button>`;
             } else if (order.status === 'ready') {

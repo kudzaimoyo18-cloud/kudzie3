@@ -337,6 +337,122 @@
             font-weight: 500;
         }
 
+        /* Order Confirmation Card */
+        .order-card {
+            background: var(--white);
+            border-radius: 16px;
+            border: 2px solid var(--gold);
+            overflow: hidden;
+            margin: 4px 0;
+        }
+
+        .order-card-header {
+            background: linear-gradient(135deg, var(--deep-red) 0%, var(--deep-red-dark) 100%);
+            color: var(--white);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-card-header .order-id {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .order-card-header .order-type {
+            background: var(--gold);
+            color: var(--text-dark);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .order-card-body {
+            padding: 14px 16px;
+        }
+
+        .order-card-items {
+            margin-bottom: 10px;
+        }
+
+        .order-card-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            padding: 5px 0;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .order-card-item:last-child {
+            border-bottom: none;
+        }
+
+        .order-card-item .qty {
+            font-weight: 600;
+            color: var(--deep-red);
+            margin-right: 6px;
+        }
+
+        .order-card-total {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 15px;
+            padding: 10px 0;
+            border-top: 2px solid var(--gold);
+            margin-bottom: 10px;
+        }
+
+        .order-card-customer {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-bottom: 12px;
+        }
+
+        .order-card-customer div {
+            padding: 2px 0;
+        }
+
+        .confirm-order-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: var(--white);
+            border: none;
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .confirm-order-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .confirm-order-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .confirm-order-btn.success {
+            background: linear-gradient(135deg, #10B981 0%, #047857 100%);
+        }
+
+        .confirm-order-btn.error {
+            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+        }
+
         /* Responsive */
         @media (max-width: 480px) {
             body {
@@ -414,7 +530,11 @@
     <script>
         // Configuration
         const WEBHOOK_URL = 'https://kudzi.app.n8n.cloud/webhook/faahmadeen';
+        const ORDER_CONFIRM_WEBHOOK = 'https://kudzi.app.n8n.cloud/webhook/faahmadeen-confirm';
         const SESSION_ID = 'session_' + Math.random().toString(36).substring(2, 15);
+
+        // Store pending orders for confirmation
+        const pendingOrders = {};
 
         // Initialize chat
         document.addEventListener('DOMContentLoaded', () => {
@@ -436,13 +556,13 @@
             function loadChatHistory() {
                 const history = getChatHistory();
                 history.forEach(msg => {
-                    displayMessage(msg.content, msg.type, msg.time, false);
+                    displayMessage(msg.content, msg.type, msg.time, false, msg.isRawHtml || false);
                 });
                 scrollToBottom();
             }
 
             // Display message
-            function displayMessage(content, type, time = null, save = true) {
+            function displayMessage(content, type, time = null, save = true, isRawHtml = false) {
                 const messagesContainer = document.getElementById('chatMessages');
                 const typingIndicator = document.getElementById('typingIndicator');
 
@@ -454,17 +574,25 @@
 
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `message ${type}`;
-                messageDiv.innerHTML = `
-                <div class="message-bubble">${formatMessage(content)}</div>
-                <div class="message-time">${messageTime}</div>
-            `;
+
+                if (isRawHtml) {
+                    messageDiv.innerHTML = `
+                    <div class="message-bubble" style="padding:0;overflow:hidden;">${content}</div>
+                    <div class="message-time">${messageTime}</div>
+                `;
+                } else {
+                    messageDiv.innerHTML = `
+                    <div class="message-bubble">${formatMessage(content)}</div>
+                    <div class="message-time">${messageTime}</div>
+                `;
+                }
 
                 messagesContainer.insertBefore(messageDiv, typingIndicator);
                 scrollToBottom();
 
                 if (save) {
                     const history = getChatHistory();
-                    history.push({ content, type, time: messageTime });
+                    history.push({ content, type, time: messageTime, isRawHtml: isRawHtml || false });
                     saveChatHistory(history);
                 }
             }
@@ -541,13 +669,24 @@
                     // Clean up order confirmation tags from display
                     botResponse = botResponse.replace(/\[ORDER_CONFIRMED\].*?\[\/ORDER_CONFIRMED\]/gs, '').trim();
 
-                    // Send confirmed orders to kitchen dashboard
-                    if (data.hasOrder && data.orderId) {
-                        sendToKitchen(data);
-                    }
-
                     showTyping(false);
-                    addBotMessage(botResponse);
+
+                    // If order is confirmed, show order card with confirm button
+                    if (data.hasOrder && data.orderId) {
+                        // Store order for confirmation
+                        pendingOrders[data.orderId] = data;
+
+                        // Show bot text response first
+                        if (botResponse) {
+                            addBotMessage(botResponse);
+                        }
+
+                        // Then show the order confirmation card
+                        const orderCardHtml = renderOrderCard(data);
+                        displayMessage(orderCardHtml, 'bot', null, true, true);
+                    } else {
+                        addBotMessage(botResponse);
+                    }
 
                 } catch (error) {
                     console.error('Error:', error);
@@ -612,6 +751,102 @@
                 }
 
                 console.log('Order sent to kitchen:', order);
+            }
+
+            // Render order confirmation card HTML
+            function renderOrderCard(data) {
+                const orderId = data.orderId;
+                const orderData = data.orderData || {};
+                const items = orderData.items || [];
+                const total = orderData.total || 0;
+                const customerName = orderData.customer_name || 'Customer';
+                const phone = orderData.phone || '';
+                const address = orderData.address || '';
+                const orderType = orderData.order_type || 'Pickup';
+
+                const itemsHtml = items.map(item =>
+                    `<div class="order-card-item">
+                        <span><span class="qty">${item.quantity}x</span> ${item.name}</span>
+                        <span>${item.price} AED</span>
+                    </div>`
+                ).join('');
+
+                return `
+                    <div class="order-card">
+                        <div class="order-card-header">
+                            <span class="order-id">#${orderId}</span>
+                            <span class="order-type">${orderType}</span>
+                        </div>
+                        <div class="order-card-body">
+                            <div class="order-card-items">
+                                ${itemsHtml || '<div style="color:#999;font-size:13px;">Order items confirmed</div>'}
+                            </div>
+                            <div class="order-card-total">
+                                <span>Total</span>
+                                <span>${total} AED</span>
+                            </div>
+                            <div class="order-card-customer">
+                                <div>👤 ${customerName}</div>
+                                ${phone ? `<div>📱 ${phone}</div>` : ''}
+                                ${address ? `<div>📍 ${address}</div>` : ''}
+                            </div>
+                            <button class="confirm-order-btn" id="confirm-btn-${orderId}" onclick="confirmOrder('${orderId}')">
+                                ✅ Confirm Order
+                            </button>
+                        </div>
+                    </div>`;
+            }
+
+            // Confirm order - send to n8n webhook
+            async function confirmOrder(orderId) {
+                const btn = document.getElementById(`confirm-btn-${orderId}`);
+                const orderData = pendingOrders[orderId];
+
+                if (!btn || !orderData) return;
+
+                btn.disabled = true;
+                btn.innerHTML = '⏳ Sending...';
+
+                try {
+                    const payload = {
+                        action: 'order_confirmed',
+                        orderId: orderId,
+                        orderType: orderData.orderData?.order_type || 'Pickup',
+                        items: orderData.orderData?.items || [],
+                        customer_name: orderData.orderData?.customer_name || 'Customer',
+                        phone: orderData.orderData?.phone || '',
+                        address: orderData.orderData?.address || '',
+                        total: orderData.orderData?.total || 0,
+                        confirmedAt: new Date().toISOString(),
+                        sessionId: SESSION_ID
+                    };
+
+                    const response = await fetch(ORDER_CONFIRM_WEBHOOK, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) throw new Error('Server error');
+
+                    btn.innerHTML = '✅ Order Received!';
+                    btn.classList.add('success');
+
+                    // Also send to kitchen dashboard
+                    sendToKitchen(orderData);
+
+                    delete pendingOrders[orderId];
+
+                } catch (error) {
+                    console.error('Order confirmation failed:', error);
+                    btn.innerHTML = '❌ Failed - Tap to Retry';
+                    btn.classList.add('error');
+                    btn.disabled = false;
+                    btn.onclick = () => {
+                        btn.classList.remove('error');
+                        confirmOrder(orderId);
+                    };
+                }
             }
         </script>
 </body>
